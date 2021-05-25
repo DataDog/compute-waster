@@ -1,4 +1,5 @@
-// Taken from the rust `rand` crate. See https://github.com/rust-random/rand/blob/master/LICENSE-MIT for license
+// Partially copied from the rust `rand` crate.
+// See https://github.com/rust-random/rand/blob/master/LICENSE-MIT for license.
 
 use std::convert::TryInto;
 
@@ -96,6 +97,28 @@ mod tests {
         ];
         for &e in &expected {
             assert_eq!(rng.next_u64(), e);
+        }
+    }
+
+    #[test]
+    fn range() {
+        // Test that indices are evenly distributed
+        let mut rng = Rng::seed_from_u64(0);
+        let size = 20;
+        let mut counts = vec![0; size];
+
+        let samples = 1_000_000;
+        let probablilty = 1.0 / size as f64;
+
+        let confidence = 2.0 * f64::sqrt(samples as f64 * probablilty * (1.0 - probablilty));
+        let avg = samples as f64 / size as f64;
+
+        for _ in 0..samples {
+            counts[rng.next_idx(size)] += 1
+        }
+
+        for i in 0..size {
+            assert!(((avg - confidence)..(avg + confidence)).contains(&(counts[i] as f64)))
         }
     }
 }
