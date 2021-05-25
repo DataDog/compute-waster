@@ -104,13 +104,13 @@ mod tests {
     fn range() {
         // Test that indices are evenly distributed
         let mut rng = Rng::seed_from_u64(0);
-        let size = 20;
+        let size = 100;
         let mut counts = vec![0; size];
 
         let samples = 1_000_000;
         let probablilty = 1.0 / size as f64;
 
-        let confidence = 2.0 * f64::sqrt(samples as f64 * probablilty * (1.0 - probablilty));
+        let confidence = 3.0 * f64::sqrt(samples as f64 * probablilty * (1.0 - probablilty));
         let avg = samples as f64 / size as f64;
 
         for _ in 0..samples {

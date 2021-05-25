@@ -1,17 +1,17 @@
 mod rng;
 
 fn main() {
-    let l2_size: usize = std::env::var("L2_SIZE")
-        .expect("Env variable L2_SIZE is missing")
+    let l3_size: usize = std::env::var("L3_SIZE")
+        .expect("Env variable L3_SIZE is missing")
         .parse()
-        .expect("Env variable L2_SIZE should be an integer");
-    l3_cache(l2_size)
+        .expect("Env variable L3_SIZE should be an integer");
+    l3_cache(l3_size)
 }
 
-fn l3_cache(l2_size: usize) {
-    // Allocating 2 times the l2 cache to trigger cache miss at least 50% of the time
-    let mut slab: Vec<u8> = vec![0; 2 * l2_size];
-    println!("Allocating slab of size {} bytes", 2 * l2_size);
+fn l3_cache(l3_size: usize) {
+    // Allocating 4 times the l2 cache to trigger cache miss at least 50% of the time
+    let mut slab: Vec<u8> = vec![0; l3_size];
+    println!("Allocating slab of size {} bytes", l3_size);
 
     let mut rng = rng::Rng::seed_from_u64(0);
 
