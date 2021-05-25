@@ -1,10 +1,10 @@
 # Compute-waster
 
-Contrary to what the name would make you think, this is not a blockchain!
+Contrary to what the name might make you think, this is not a blockchain!
 
 ## Purpose
 
-This program runs useless but expensive computions to generate load on components of the CPU.
+This program runs useless but expensive computations to generate load on components of the CPU.
 
 ### L3 data cache
 
