@@ -23,7 +23,7 @@ impl Config {
             .map_err(|_| "Env variable L2x_SIZE should be an unsigned integer")?;
         let cache_hits_per_s: u64 = match env::var("L3_HITS") {
             Err(env::VarError::NotPresent) => {
-                println!("Env variable L3_HITS is missing, defaults to 100_000_000");
+                println!("Env variable L3_HITS is missing, defaults to 100000000");
                 100_000_000
             }
             Err(env::VarError::NotUnicode(_)) => {
