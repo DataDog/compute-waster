@@ -1,60 +1,25 @@
+mod config;
 mod regulator;
 mod rng;
 
 use std::{
-    env, thread,
+    thread,
     time::{Duration, Instant},
 };
 
+use config::Config;
 use regulator::Regulator;
 use rng::Rng;
 
-struct Config {
-    l2_size: usize,
-    cache_hits_per_s: u64,
-    debug: bool,
-}
-
-impl Config {
-    fn from_env() -> Result<Self, &'static str> {
-        let l2_size: usize = std::env::var("L2_SIZE")
-            .map_err(|_| "Env variable L2_SIZE is missing")?
-            .parse()
-            .map_err(|_| "Env variable L2x_SIZE should be an unsigned integer")?;
-        let cache_hits_per_s: u64 = match env::var("L3_HITS") {
-            Err(env::VarError::NotPresent) => {
-                println!("Env variable L3_HITS is missing, defaults to 100000000");
-                100_000_000
-            }
-            Err(env::VarError::NotUnicode(_)) => {
-                return Err("Env variable L3_HITS should be an unsigned integer");
-            }
-            Ok(v) => v
-                .parse()
-                .map_err(|_| "Env variable L3_HITS should be an unsigned integer")?,
-        };
-        let debug = env::var("DEBUG").map(|v| v == "true").unwrap_or(false);
-        Ok(Self {
-            l2_size,
-            cache_hits_per_s,
-            debug,
-        })
-    }
-}
-
 fn main() {
-    let Config {
-        l2_size,
-        cache_hits_per_s,
-        debug,
-    } = Config::from_env().unwrap();
-    l3_cache(cache_hits_per_s, l2_size, debug);
+    let cfg = Config::from_env().unwrap();
+    l3_cache(&cfg);
 }
 
-fn l3_cache(ops_per_s: u64, l2_size: usize, debug: bool) {
-    let mut slab = allocate_slab(l2_size);
+fn l3_cache(cfg: &Config) {
+    let mut slab = allocate_slab(cfg);
     let mut rng = rng::Rng::seed_from_u64(0);
-    let mut reg = Regulator::new(ops_per_s, 1_000_000);
+    let mut reg = Regulator::new(cfg.cache_hits_per_s, 1_000_000);
     loop {
         let mut now = Instant::now();
         let mut counter = 0.0;
@@ -63,11 +28,11 @@ fn l3_cache(ops_per_s: u64, l2_size: usize, debug: bool) {
                 poke_laps(&mut slab, &mut rng, reg.lap_ops as u64);
                 reg.add_lap();
                 thread::sleep(Duration::from_micros(200));
-                if debug {
+                if cfg.debug {
                     counter += reg.lap_ops;
                 }
             }
-            if debug && counter > reg.target_ops_per_s {
+            if cfg.debug && counter > reg.target_ops_per_s {
                 println!("{} in {}ms", counter, now.elapsed().as_millis());
                 counter = 0.0;
                 now = Instant::now();
@@ -79,8 +44,8 @@ fn l3_cache(ops_per_s: u64, l2_size: usize, debug: bool) {
 }
 
 /// Allocates a slab 4 times the l2 cache to trigger L2 miss/L3 hit ~75% of the time
-fn allocate_slab(l2_size: usize) -> Box<[u8]> {
-    let slab_size = 4 * l2_size;
+fn allocate_slab(cfg: &Config) -> Box<[u8]> {
+    let slab_size = (cfg.slab_to_cache_ration * cfg.l2_size as f32) as usize;
     println!("Allocating slab of size {} bytes", slab_size);
     vec![0; slab_size].into_boxed_slice()
 }
