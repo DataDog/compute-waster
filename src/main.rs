@@ -11,9 +11,10 @@ use config::Config;
 use regulator::Regulator;
 use rng::Rng;
 
-fn main() {
-    let cfg = Config::from_env().unwrap();
+fn main() -> Result<(), String> {
+    let cfg = Config::from_env()?;
     l3_cache(&cfg);
+    Ok(())
 }
 
 fn l3_cache(cfg: &Config) {
@@ -21,7 +22,7 @@ fn l3_cache(cfg: &Config) {
     let mut rng = rng::Rng::seed_from_u64(0);
     let mut reg = Regulator::new(cfg.cache_hits_per_s, 1_000_000);
 
-    // Cache warmup 
+    // Cache warmup
     let cache_len = slab.len() as u64 / 2;
     poke_laps(&mut slab, &mut rng, cache_len);
     println!("Finished cache warmups");
@@ -33,7 +34,7 @@ fn l3_cache(cfg: &Config) {
             while !reg.should_adjust() {
                 poke_laps(&mut slab, &mut rng, reg.lap_ops as u64);
                 reg.add_lap();
-                thread::sleep(Duration::from_micros(200));
+                thread::sleep(Duration::from_micros(cfg.sleep_duration));
                 if cfg.debug {
                     counter += reg.lap_ops;
                 }

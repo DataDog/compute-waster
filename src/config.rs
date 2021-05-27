@@ -5,6 +5,25 @@ pub struct Config {
     pub slab_to_cache_ration: f32,
     pub cache_hits_per_s: u64,
     pub debug: bool,
+    pub sleep_duration: u64, // In micro seconds
+}
+
+impl Config {
+    pub fn from_env() -> Result<Self, String> {
+        let l2_size: usize = parse_env_var("L2_SIZE")?;
+        let cache_hits_per_s: u64 = parse_env_var_or("L3_HITS", 100_000_000)?;
+        let debug = env::var("DEBUG").map(|v| v == "true").unwrap_or(false);
+        let slab_to_cache_ration: f32 = parse_env_var_or("SLAB_CACHE_RATIO", 2.0)?;
+        let sleep_duration: u64 = parse_env_var_or("SLEEP_DURATION", 100)?;
+
+        Ok(Self {
+            l2_size,
+            cache_hits_per_s,
+            slab_to_cache_ration,
+            debug,
+            sleep_duration,
+        })
+    }
 }
 
 fn parse_env_var<T>(name: &str) -> Result<T, String>
@@ -51,20 +70,4 @@ where
             )
         })?,
     })
-}
-
-impl Config {
-    pub fn from_env() -> Result<Self, String> {
-        let l2_size: usize = parse_env_var("L2_SIZE")?;
-        let cache_hits_per_s: u64 = parse_env_var_or("L3_HITS", 100_000_000)?;
-        let debug = env::var("DEBUG").map(|v| v == "true").unwrap_or(false);
-        let slab_to_cache_ration: f32 = parse_env_var_or("SLAB_CACHE_RATIO", 2.0)?;
-
-        Ok(Self {
-            l2_size,
-            cache_hits_per_s,
-            slab_to_cache_ration,
-            debug,
-        })
-    }
 }
