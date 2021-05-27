@@ -20,6 +20,12 @@ fn l3_cache(cfg: &Config) {
     let mut slab = allocate_slab(cfg);
     let mut rng = rng::Rng::seed_from_u64(0);
     let mut reg = Regulator::new(cfg.cache_hits_per_s, 1_000_000);
+
+    // Cache warmup 
+    let cache_len = slab.len() as u64 / 2;
+    poke_laps(&mut slab, &mut rng, cache_len);
+    println!("Finished cache warmups");
+
     loop {
         let mut now = Instant::now();
         let mut counter = 0.0;
@@ -33,6 +39,7 @@ fn l3_cache(cfg: &Config) {
                 }
             }
             if cfg.debug && counter > reg.target_ops_per_s {
+                println!("{:?}", reg);
                 println!("{} in {}ms", counter, now.elapsed().as_millis());
                 counter = 0.0;
                 now = Instant::now();
