@@ -13,7 +13,7 @@ pub struct Regulator {
 
 impl Regulator {
     // Proportional correction factor
-    const KP: f64 = 0.0001;
+    const KP: f64 = 0.01;
 
     pub fn new(target_ops_per_s: u64, laps_iters: u64) -> Self {
         Self {
@@ -36,7 +36,7 @@ impl Regulator {
         let elapsed = self.last_checked.elapsed().as_secs_f64();
 
         // Proportionnal correction
-        let correction = Self::KP * ((self.ops_counter / elapsed) - self.target_ops_per_s);
+        let correction = (Self::KP * elapsed) * ((self.ops_counter / elapsed) - self.target_ops_per_s);
         self.lap_ops = f64::max(self.lap_ops - correction, 1.0).floor();
 
         self.ops_counter = 0.0;
