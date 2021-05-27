@@ -24,7 +24,7 @@ fn l3_cache(cfg: &Config) {
 
     // Cache warmup
     let cache_len = slab.len() as u64 / 2;
-    poke_laps(&mut slab, &mut rng, cache_len);
+    poke_slab(&mut slab, &mut rng, cache_len);
     println!("Finished cache warmups");
 
     loop {
@@ -32,7 +32,7 @@ fn l3_cache(cfg: &Config) {
         let mut counter = 0.0;
         for _ in 0..u64::MAX {
             while !reg.should_adjust() {
-                poke_laps(&mut slab, &mut rng, reg.lap_ops as u64);
+                poke_slab(&mut slab, &mut rng, reg.lap_ops as u64);
                 reg.add_lap();
                 thread::sleep(Duration::from_micros(cfg.sleep_duration));
                 if cfg.debug {
@@ -58,7 +58,7 @@ fn allocate_slab(cfg: &Config) -> Box<[u8]> {
     vec![0; slab_size].into_boxed_slice()
 }
 
-fn poke_laps(slab: &mut [u8], rng: &mut Rng, iterations: u64) {
+fn poke_slab(slab: &mut [u8], rng: &mut Rng, iterations: u64) {
     let mut last_val = 0;
     for _ in 0..iterations {
         let idx = rng.next_idx(slab.len());
