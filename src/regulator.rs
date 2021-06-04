@@ -36,7 +36,8 @@ impl Regulator {
         let elapsed = self.last_checked.elapsed().as_secs_f64();
 
         // Proportionnal correction
-        let correction = (Self::KP * elapsed) * ((self.ops_counter / elapsed) - self.target_ops_per_s);
+        let correction =
+            (Self::KP * elapsed) * ((self.ops_counter / elapsed) - self.target_ops_per_s);
         self.lap_ops = f64::max(self.lap_ops - correction, 1.0).floor();
 
         self.ops_counter = 0.0;

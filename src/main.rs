@@ -1,4 +1,5 @@
 mod config;
+mod dstatsd;
 mod regulator;
 mod rng;
 
@@ -12,8 +13,8 @@ use regulator::Regulator;
 use rng::Rng;
 
 fn main() -> Result<(), String> {
-    let cfg = Config::from_env()?;
-    l3_cache(&cfg);
+    let mut cfg = Config::from_env()?;
+    l3_cache(&mut cfg);
     Ok(())
 }
 
@@ -21,6 +22,14 @@ fn l3_cache(cfg: &Config) {
     let mut slab = allocate_slab(cfg);
     let mut rng = rng::Rng::seed_from_u64(0);
     let mut reg = Regulator::new(cfg.cache_hits_per_s, 1_000_000);
+    let ops_per_s = dstatsd::Metric {
+        name: format!("{}.ops_per_s", cfg.dd_metric_name),
+        tags: cfg.dd_tags.clone(),
+    };
+    let lap_ops = dstatsd::Metric {
+        name: format!("{}.lap_ops", cfg.dd_metric_name),
+        tags: cfg.dd_tags.clone(),
+    };
 
     // Cache warmup
     let cache_len = slab.len() as u64 / 2;
@@ -35,13 +44,24 @@ fn l3_cache(cfg: &Config) {
                 poke_slab(&mut slab, &mut rng, reg.lap_ops as u64);
                 reg.add_lap();
                 thread::sleep(Duration::from_micros(cfg.sleep_duration));
-                if cfg.debug {
+                if cfg.debug || cfg.dd_client.is_some() {
                     counter += reg.lap_ops;
                 }
             }
-            if cfg.debug && counter > reg.target_ops_per_s {
-                println!("{:?}", reg);
-                println!("{} in {}ms", counter, now.elapsed().as_millis());
+            if (cfg.debug || cfg.dd_client.is_some()) && counter > reg.target_ops_per_s {
+                if cfg.debug {
+                    println!("{:?}", reg);
+                    println!("{} in {}ms", counter, now.elapsed().as_millis());
+                }
+                if let Some(client) = &cfg.dd_client {
+                    let value = counter / now.elapsed().as_secs_f64();
+                    if let Err(e) = client.borrow_mut().send(ops_per_s.with_value(value)) {
+                        eprintln!("Error sending metrics to dogstatsd: {}", e);
+                    }
+                    if let Err(e) = client.borrow_mut().send(lap_ops.with_value(reg.lap_ops)) {
+                        eprintln!("Error sending metrics to dogstatsd: {}", e);
+                    }
+                }
                 counter = 0.0;
                 now = Instant::now();
             }
