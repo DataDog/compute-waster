@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 NAME=compute-waster
 TAG=latest
 REPOSITORY=
@@ -13,9 +15,9 @@ if [ -z "$REPOSITORY" ]; then
     exit 1
 fi
 
-echo -e "\n\n===== building image as $NAME:$TAG =====\n"
+echo -e "\n===== building image as $NAME:$TAG =====\n"
 docker build --tag $NAME:$TAG .
-echo -e "\n\n===== tagging $NAME:$TAG image as $REPOSITORY/$NAME:$TAG =====\n"
+echo -e "\n===== tagging $NAME:$TAG image as $REPOSITORY/$NAME:$TAG =====\n"
 docker image tag $NAME:$TAG $REPOSITORY/$NAME:$TAG
-echo -e "\n\n===== pushing image as $REPOSITORY/$NAME:$TAG =====\n"
+echo -e "\n===== pushing image as $REPOSITORY/$NAME:$TAG =====\n"
 docker image push $REPOSITORY/$NAME:$TAG
